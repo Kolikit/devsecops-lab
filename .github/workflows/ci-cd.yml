@@ -92,13 +92,13 @@ jobs:
           pip install build
 
       - name: Build Python package
+        working-directory: app
         run: |
-          cd app
           python -m build
 
       - name: Upload built package as artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-package-dist
-          path: dist/
+          path: app/dist/
           if-no-files-found: warn
