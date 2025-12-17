@@ -1,0 +1,33 @@
+Vagrant.configure("2") do |config|
+ config.vm.box = "ubuntu/jammy64"
+ # Добавляем приватную сеть с статическим IP
+ config.vm.network "private_network", ip: "192.168.56.10"
+ # Пробрасываем порт для доступа с хоста
+ config.vm.network "forwarded_port", guest: 5000, host: 5000
+ config.vm.provider "virtualbox" do |vb|
+ vb.memory = "1024"
+ vb.cpus = 1
+ vb.name = "devsecops-vm"
+ end
+ config.ssh.insert_key = false
+ config.vm.provision "shell", inline: <<-SHELL
+ # Обновляем и устанавливаем пакеты
+ apt-get update
+ apt-get install -y python3 python3-pip
+ apt-get install -y docker.io
+
+ # Добавляем пользователя vagrant в группу docker
+ usermod -aG docker vagrant
+ # Создаем директорию для Docker daemon configuration
+ mkdir -p /etc/docker
+ # Настраиваем insecure registry для Docker
+ echo '{
+ "insecure-registries": ["localhost:5000", "192.168.56.10:5000",
+"127.0.0.1:5000"]
+ }' > /etc/docker/daemon.json
+ # Перезапускаем Docker для применения настроек
+ systemctl restart docker
+ # Даем права на docker.sock для пользователя vagrant
+ chmod 666 /var/run/docker.sock
+ SHELL
+end
